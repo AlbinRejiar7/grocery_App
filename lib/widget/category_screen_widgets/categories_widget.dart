@@ -1,23 +1,23 @@
-// ignore_for_file: prefer_const_constructors, must_be_immutable
-
 import 'package:flutter/material.dart';
-import 'package:grocery_app/controller/dark_theme_controller.dart';
+import 'package:grocery_app/controller/dark_theme_provider.dart';
 import 'package:provider/provider.dart';
 
 class CategoriesWidget extends StatelessWidget {
-  void Function()? onTap;
   final String catName;
   final String imagePath;
-  CategoriesWidget(
-      {super.key, this.onTap, required this.catName, required this.imagePath});
+  const CategoriesWidget(
+      {super.key, required this.catName, required this.imagePath});
 
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    var themeController = Provider.of<ThemeController>(context);
+    var themeController = Provider.of<DarkThemeProvider>(context);
     final color = themeController.getDarkTheme ? Colors.white : Colors.black;
     return GestureDetector(
-      onTap: onTap,
+      onTap: () {
+        Navigator.pushNamed(context, "categorydetailsscreen",
+            arguments: catName);
+      },
       child: Container(
         decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),

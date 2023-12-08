@@ -1,13 +1,15 @@
-// ignore_for_file: prefer_const_literals_to_create_immutables, prefer_const_constructors
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:grocery_app/controller/dark_theme_controller.dart';
+import 'package:grocery_app/controller/cart_controller.dart';
+import 'package:grocery_app/controller/dark_theme_provider.dart';
+import 'package:grocery_app/controller/product_controller.dart';
 import 'package:iconly/iconly.dart';
 import 'package:provider/provider.dart';
 
 class ProductdetailScreen extends StatefulWidget {
-  const ProductdetailScreen({super.key});
+  const ProductdetailScreen({
+    super.key,
+  });
 
   @override
   State<ProductdetailScreen> createState() => _ProductdetailScreenState();
@@ -17,7 +19,6 @@ class _ProductdetailScreenState extends State<ProductdetailScreen> {
   TextEditingController quantityController = TextEditingController();
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     quantityController.text = "1";
   }
@@ -30,9 +31,18 @@ class _ProductdetailScreenState extends State<ProductdetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final themeController = Provider.of<ThemeController>(context);
+    final themeController = Provider.of<DarkThemeProvider>(context);
     Color color = themeController.getDarkTheme ? Colors.white : Colors.black;
     final size = MediaQuery.of(context).size;
+    final productId = ModalRoute.of(context)!.settings.arguments as String;
+    final getCurrentProduct =
+        Provider.of<ProductController>(context).findProdByid(productId);
+    double usedPrice = getCurrentProduct.isOnSale
+        ? getCurrentProduct.salePrice
+        : getCurrentProduct.price;
+
+    double totalPrice = usedPrice * int.parse(quantityController.text);
+    final cartProvider = Provider.of<CartController>(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -41,7 +51,7 @@ class _ProductdetailScreenState extends State<ProductdetailScreen> {
           onPressed: () {
             Navigator.of(context).pop();
           },
-          icon: Icon(IconlyLight.arrow_left),
+          icon: const Icon(IconlyLight.arrow_left),
           color: color,
         ),
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -50,15 +60,14 @@ class _ProductdetailScreenState extends State<ProductdetailScreen> {
         child: Column(
           children: [
             Container(
-              padding: EdgeInsets.all(150),
+              padding: const EdgeInsets.all(150),
               decoration: BoxDecoration(
                 image: DecorationImage(
-                    image:
-                        NetworkImage("https://i.ibb.co/F0s3FHQ/Apricots.png")),
+                    image: NetworkImage(getCurrentProduct.imageUrl)),
                 borderRadius: BorderRadius.circular(20),
               ),
             ),
-            SizedBox(
+            const SizedBox(
               height: 10,
             ),
             Padding(
@@ -67,13 +76,13 @@ class _ProductdetailScreenState extends State<ProductdetailScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    "Name",
+                    getCurrentProduct.title,
                     style: TextStyle(
                         color: color,
                         fontWeight: FontWeight.bold,
                         fontSize: 24),
                   ),
-                  Icon(IconlyLight.heart)
+                  const Icon(IconlyLight.heart)
                 ],
               ),
             ),
@@ -85,14 +94,14 @@ class _ProductdetailScreenState extends State<ProductdetailScreen> {
                   Row(
                     children: [
                       Text(
-                        "\$ 2.99",
-                        style: TextStyle(
+                        "\$ ${usedPrice.toStringAsFixed(2)}",
+                        style: const TextStyle(
                             color: Colors.green,
                             fontWeight: FontWeight.bold,
                             fontSize: 24),
                       ),
                       Text(
-                        "/Kg",
+                        "/${getCurrentProduct.isPiece ? "piece" : "kg"}",
                         style: TextStyle(
                             color: color,
                             fontWeight: FontWeight.bold,
@@ -101,8 +110,8 @@ class _ProductdetailScreenState extends State<ProductdetailScreen> {
                     ],
                   ),
                   Container(
-                    padding: EdgeInsets.all(8),
-                    child: Text(
+                    padding: const EdgeInsets.all(8),
+                    child: const Text(
                       "Free Delivery",
                       style: TextStyle(color: Colors.white),
                     ),
@@ -133,7 +142,7 @@ class _ProductdetailScreenState extends State<ProductdetailScreen> {
                             }
                           });
                         },
-                        child: Card(
+                        child: const Card(
                             color: Colors.red,
                             child: Icon(
                               Icons.remove,
@@ -159,8 +168,8 @@ class _ProductdetailScreenState extends State<ProductdetailScreen> {
                             }
                           });
                         },
-                        decoration:
-                            InputDecoration(border: UnderlineInputBorder())),
+                        decoration: const InputDecoration(
+                            border: UnderlineInputBorder())),
                   ),
                   SizedBox(
                       height: 50,
@@ -172,7 +181,7 @@ class _ProductdetailScreenState extends State<ProductdetailScreen> {
                                   .toString();
                           setState(() {});
                         },
-                        child: Card(
+                        child: const Card(
                             color: Colors.green,
                             child: Icon(
                               Icons.add,
@@ -191,7 +200,7 @@ class _ProductdetailScreenState extends State<ProductdetailScreen> {
               children: [
                 Column(
                   children: [
-                    Text(
+                    const Text(
                       "TOTAL",
                       style: TextStyle(
                           color: Colors.green,
@@ -199,7 +208,7 @@ class _ProductdetailScreenState extends State<ProductdetailScreen> {
                           fontSize: 20),
                     ),
                     Text(
-                      "\$ 2.8",
+                      "\$ ${totalPrice.toStringAsFixed(2)}",
                       style: TextStyle(
                           color: color,
                           fontWeight: FontWeight.w900,
@@ -212,9 +221,15 @@ class _ProductdetailScreenState extends State<ProductdetailScreen> {
                         shape: MaterialStatePropertyAll(RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(6))),
                         backgroundColor:
-                            MaterialStatePropertyAll(Colors.green)),
-                    onPressed: () {},
-                    child: Text(
+                            const MaterialStatePropertyAll(Colors.green)),
+                    onPressed: () {
+                      cartProvider.addToCart(
+                          productId: productId,
+                          quantity: int.parse(quantityController.text),
+                          context: context);
+                      cartProvider.fetchCart();
+                    },
+                    child: const Text(
                       "Add to cart",
                       style: TextStyle(color: Colors.white),
                     ))

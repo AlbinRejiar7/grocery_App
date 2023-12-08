@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:grocery_app/controller/dark_theme_controller.dart';
+import 'package:grocery_app/Model/products_model.dart';
+import 'package:grocery_app/controller/dark_theme_provider.dart';
+import 'package:grocery_app/controller/product_controller.dart';
 import 'package:grocery_app/widget/home_screen_widgets/product_widget.dart';
 import 'package:iconly/iconly.dart';
 import 'package:provider/provider.dart';
@@ -13,11 +15,32 @@ class AllProductsInnerScreen extends StatefulWidget {
 
 class _AllProductsInnerScreenState extends State<AllProductsInnerScreen> {
   @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
+
+  TextEditingController searchController = TextEditingController();
+  var query = "";
+  @override
   Widget build(BuildContext context) {
-    var themeController = Provider.of<ThemeController>(context);
+    var themeController = Provider.of<DarkThemeProvider>(context);
     final color = themeController.getDarkTheme ? Colors.white : Colors.black;
+    final productProviders = Provider.of<ProductController>(context);
+    List<ProductModel> allProducts = productProviders.getProducts;
+    List<ProductModel> searchProducts = productProviders.findBySearch(query);
+
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
+        leading: IconButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            icon: Icon(
+              Icons.arrow_back,
+              color: color,
+            )),
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         title: Text(
           "All Products",
@@ -31,6 +54,12 @@ class _AllProductsInnerScreenState extends State<AllProductsInnerScreen> {
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: TextField(
+                onChanged: (val) {
+                  setState(() {
+                    query = val;
+                  });
+                },
+                controller: searchController,
                 style: TextStyle(color: color),
                 decoration: InputDecoration(
                     prefixIcon: Icon(
@@ -42,17 +71,30 @@ class _AllProductsInnerScreenState extends State<AllProductsInnerScreen> {
                         borderRadius: BorderRadius.circular(20))),
               ),
             ),
-            GridView.builder(
-              physics: NeverScrollableScrollPhysics(),
-              shrinkWrap: true,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-              ),
-              itemCount: 4,
-              itemBuilder: (BuildContext context, int index) {
-                return OurProductsWidget();
-              },
-            ),
+            searchProducts.isEmpty
+                ? const Text("NO ITEM IN THIS NAME")
+                : GridView.builder(
+                    padding: const EdgeInsets.all(5),
+                    physics: const NeverScrollableScrollPhysics(),
+                    shrinkWrap: true,
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                    ),
+                    itemCount: searchController.text.isEmpty
+                        ? allProducts.length
+                        : searchProducts.length,
+                    itemBuilder: (BuildContext context, int index) {
+                      return ChangeNotifierProvider.value(
+                        value: searchController.text.isEmpty
+                            ? allProducts[index]
+                            : searchProducts[index],
+                        child: const OurProductsWidget(),
+                      );
+                    },
+                  ),
           ],
         ),
       ),

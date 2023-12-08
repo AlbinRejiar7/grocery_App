@@ -1,7 +1,7 @@
-// ignore_for_file: prefer_const_literals_to_create_immutables, prefer_const_constructors,
-
 import 'package:flutter/material.dart';
-import 'package:grocery_app/controller/dark_theme_controller.dart';
+import 'package:grocery_app/Model/products_model.dart';
+import 'package:grocery_app/controller/dark_theme_provider.dart';
+import 'package:grocery_app/controller/product_controller.dart';
 import 'package:grocery_app/widget/home_screen_widgets/onsale_container.dart';
 import 'package:iconly/iconly.dart';
 import 'package:provider/provider.dart';
@@ -12,12 +12,23 @@ class OnSaleinnerScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    final themeController = Provider.of<ThemeController>(context);
+    final themeController = Provider.of<DarkThemeProvider>(context);
     Color color = themeController.getDarkTheme ? Colors.white : Colors.black;
-    bool isEmpty = true;
+    final List<ProductModel> onSaleproducts =
+        Provider.of<ProductController>(context).getOnsaleProducts;
+
     return Scaffold(
       appBar: AppBar(
-        title: Row(
+        automaticallyImplyLeading: false,
+        leading: IconButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            icon: Icon(
+              Icons.arrow_back,
+              color: color,
+            )),
+        title: const Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
@@ -37,7 +48,7 @@ class OnSaleinnerScreen extends StatelessWidget {
         ),
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       ),
-      body: !isEmpty
+      body: onSaleproducts.isEmpty
           ? Center(
               child: Text(
               "No Sales right now,\nStay tuned",
@@ -52,9 +63,13 @@ class OnSaleinnerScreen extends StatelessWidget {
                     crossAxisSpacing: 15,
                     mainAxisSpacing: 15,
                     childAspectRatio: size.width / (size.height * 0.50)),
-                itemCount: 10,
+                itemCount: onSaleproducts.length,
                 itemBuilder: (BuildContext context, int index) {
-                  return GestureDetector(onTap: () {}, child: OnSaleWidget());
+                  return GestureDetector(
+                      onTap: () {},
+                      child: ChangeNotifierProvider.value(
+                          value: onSaleproducts[index],
+                          child: const OnSaleWidget()));
                 },
               ),
             ),

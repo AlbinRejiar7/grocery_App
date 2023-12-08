@@ -1,6 +1,18 @@
+// ignore_for_file: use_build_context_synchronously, prefer_const_constructors, prefer_const_literals_to_create_immutables
+
+import 'dart:io';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:grocery_app/constants/app_constants.dart';
+import 'package:grocery_app/constants/firebase_const.dart';
+import 'package:grocery_app/globalmethod/pagerouter.dart';
+import 'package:grocery_app/view/auth/login_screen.dart';
 import 'package:grocery_app/widget/app_text_form_field.dart';
+import 'package:image_picker/image_picker.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -15,12 +27,15 @@ class _RegisterPageState extends State<RegisterPage> {
   TextEditingController emailController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
   TextEditingController confirmPasswordController = TextEditingController();
+  TextEditingController addressController = TextEditingController();
 
-  // FocusNode confirmFocusNode = FocusNode();
+  FocusNode confirmFocusNode = FocusNode();
 
   bool isObscure = true;
   bool isConfirmPasswordObscure = true;
-
+  bool isLoading = false;
+  File? pickedImage;
+  String imageUrl = "";
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
@@ -30,9 +45,8 @@ class _RegisterPageState extends State<RegisterPage> {
         child: ListView(
           children: [
             Container(
-              height: size.height * 0.24,
+              height: size.height * 0.18,
               width: double.infinity,
-              padding: const EdgeInsets.all(20),
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
@@ -76,6 +90,23 @@ class _RegisterPageState extends State<RegisterPage> {
                 ],
               ),
             ),
+            GestureDetector(
+                onTap: () {
+                  pickImageFromGallery();
+                },
+                child: Column(
+                  children: [
+                    pickedImage == null
+                        ? CircleAvatar(
+                            radius: 70,
+                          )
+                        : CircleAvatar(
+                            backgroundImage: FileImage(pickedImage!),
+                            radius: 70,
+                          ),
+                    Icon(Icons.add_a_photo)
+                  ],
+                )),
             Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: 20,
@@ -127,10 +158,10 @@ class _RegisterPageState extends State<RegisterPage> {
                     },
                     controller: passwordController,
                     obscureText: isObscure,
-                    // onEditingComplete: () {
-                    //   FocusScope.of(context).unfocus();
-                    //   FocusScope.of(context).requestFocus(confirmFocusNode);
-                    // },
+                    onEditingComplete: () {
+                      FocusScope.of(context).unfocus();
+                      FocusScope.of(context).requestFocus(confirmFocusNode);
+                    },
                     suffixIcon: Padding(
                       padding: const EdgeInsets.only(right: 15),
                       child: Focus(
@@ -166,7 +197,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     labelText: 'Confirm Password',
                     keyboardType: TextInputType.visiblePassword,
                     textInputAction: TextInputAction.done,
-                    // focusNode: confirmFocusNode,
+                    focusNode: confirmFocusNode,
                     onChanged: (value) {
                       _formKey.currentState?.validate();
                     },
@@ -216,29 +247,105 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                     ),
                   ),
-                  FilledButton(
-                    onPressed: _formKey.currentState?.validate() ?? false
-                        ? () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Registration Complete!'),
-                              ),
-                            );
-                            nameController.clear();
-                            emailController.clear();
-                            passwordController.clear();
-                            confirmPasswordController.clear();
-                          }
-                        : null,
-                    style: const ButtonStyle().copyWith(
-                      backgroundColor: MaterialStateProperty.all(
-                        _formKey.currentState?.validate() ?? false
-                            ? null
-                            : Colors.grey.shade300,
-                      ),
-                    ),
-                    child: const Text('Register'),
+                  AppTextFormField(
+                    labelText: 'Shipping Address',
+                    validator: (value) {
+                      return value!.isEmpty ? "Enter Your Address" : null;
+                    },
+                    autofocus: true,
+                    keyboardType: TextInputType.streetAddress,
+                    textInputAction: TextInputAction.done,
+                    controller: addressController,
                   ),
+                  isLoading
+                      ? SpinKitCircle(
+                          color: Colors.blueAccent,
+                        )
+                      : FilledButton(
+                          onPressed: _formKey.currentState?.validate() ?? false
+                              ? () async {
+                                  setState(() {
+                                    isLoading = true;
+                                  });
+                                  try {
+                                    await authInstance
+                                        .createUserWithEmailAndPassword(
+                                            email: emailController.text
+                                                .toLowerCase()
+                                                .trim(),
+                                            password: passwordController.text);
+                                    final uid = authInstance.currentUser!.uid;
+
+                                    final ref = FirebaseStorage.instance
+                                        .ref()
+                                        .child("profileimage")
+                                        .child("$uid.jpg");
+                                    await ref.putFile(pickedImage!);
+                                    imageUrl = await ref.getDownloadURL();
+
+                                    await FirebaseFirestore.instance
+                                        .collection("users")
+                                        .doc(uid)
+                                        .set({
+                                      "id": uid,
+                                      "name": nameController.text,
+                                      "email":
+                                          emailController.text.toLowerCase(),
+                                      "address": addressController.text,
+                                      "userWish": [],
+                                      "userCart": [],
+                                      "profileimage": imageUrl,
+                                      "createdAt": Timestamp.now()
+                                    });
+
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Registration Complete!'),
+                                      ),
+                                    );
+                                    Future.delayed(const Duration(seconds: 1));
+                                    Navigator.of(context).push(
+                                        buildPageRouteBuilder(LoginPage()));
+                                  } on FirebaseAuthException catch (error) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('ERROR OCCURED $error '),
+                                      ),
+                                    );
+                                    setState(() {
+                                      isLoading = false;
+                                    });
+                                  } catch (error) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('ERROR OCCURED $error '),
+                                      ),
+                                    );
+                                    setState(() {
+                                      isLoading = false;
+                                    });
+                                  } finally {
+                                    setState(() {
+                                      isLoading = false;
+                                    });
+                                  }
+
+                                  nameController.clear();
+                                  emailController.clear();
+                                  passwordController.clear();
+                                  confirmPasswordController.clear();
+                                  addressController.clear();
+                                }
+                              : null,
+                          style: const ButtonStyle().copyWith(
+                            backgroundColor: MaterialStateProperty.all(
+                              _formKey.currentState?.validate() ?? false
+                                  ? null
+                                  : Colors.grey.shade300,
+                            ),
+                          ),
+                          child: const Text('Register'),
+                        ),
                 ],
               ),
             ),
@@ -274,5 +381,16 @@ class _RegisterPageState extends State<RegisterPage> {
         ),
       ),
     );
+  }
+
+  Future<void> pickImageFromGallery() async {
+    final XFile? pickedFile =
+        await ImagePicker().pickImage(source: ImageSource.gallery);
+
+    setState(() {
+      if (pickedFile != null) {
+        pickedImage = File(pickedFile.path);
+      } else {}
+    });
   }
 }

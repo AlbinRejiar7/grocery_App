@@ -12,12 +12,12 @@ class Styles {
       primaryColor: isDarkTheme ? Colors.blue : Colors.green,
       colorScheme: ThemeData().colorScheme.copyWith(
             secondary: isDarkTheme
-                ? Color.fromARGB(255, 30, 62, 248)
+                ? const Color.fromARGB(255, 30, 62, 248)
                 : const Color(0xFFE8FDFD),
             brightness: isDarkTheme ? Brightness.dark : Brightness.light,
           ),
       cardColor: isDarkTheme
-          ? Color.fromARGB(255, 26, 31, 85)
+          ? const Color.fromARGB(255, 26, 31, 85)
           : const Color(0xFFF2FDFD),
       canvasColor: isDarkTheme ? Colors.black : Colors.grey[50],
       buttonTheme: Theme.of(context).buttonTheme.copyWith(

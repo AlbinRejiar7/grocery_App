@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 class MyUserScreenListTile extends StatelessWidget {
+  final bool isAddress;
+  final Widget address;
   final String title;
   final IconData myIcon;
   final Color color;
@@ -12,6 +14,8 @@ class MyUserScreenListTile extends StatelessWidget {
     required this.myIcon,
     required this.color,
     this.onTap,
+    this.isAddress = false,
+    this.address = const Text("address"),
   });
 
   @override
@@ -32,6 +36,7 @@ class MyUserScreenListTile extends StatelessWidget {
           title,
           style: TextStyle(color: color),
         ),
+        subtitle: isAddress ? address : null,
         trailing: Icon(
           Icons.chevron_right,
           color: color,

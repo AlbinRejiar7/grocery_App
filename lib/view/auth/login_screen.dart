@@ -1,8 +1,13 @@
+// ignore_for_file: use_build_context_synchronously, prefer_const_constructors
+
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:grocery_app/constants/app_constants.dart';
 import 'package:grocery_app/constants/extensions.dart';
 import 'package:grocery_app/globalmethod/pagerouter.dart';
 import 'package:grocery_app/view/auth/register_screen.dart';
+import 'package:grocery_app/view/splash_screen.dart';
 import 'package:grocery_app/widget/app_text_form_field.dart';
 
 class LoginPage extends StatefulWidget {
@@ -18,7 +23,8 @@ class _LoginPageState extends State<LoginPage> {
   TextEditingController passwordController = TextEditingController();
 
   bool isObscure = true;
-
+  final FirebaseAuth authInstance = FirebaseAuth.instance;
+  bool isLoading = false;
   @override
   Widget build(BuildContext context) {
     final size = context.mediaQuerySize;
@@ -134,27 +140,67 @@ class _LoginPageState extends State<LoginPage> {
                     const SizedBox(
                       height: 15,
                     ),
-                    FilledButton(
-                      onPressed: _formKey.currentState?.validate() ?? false
-                          ? () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Logged In!'),
-                                ),
-                              );
-                              emailController.clear();
-                              passwordController.clear();
-                            }
-                          : null,
-                      style: const ButtonStyle().copyWith(
-                        backgroundColor: MaterialStateProperty.all(
-                          _formKey.currentState?.validate() ?? false
-                              ? null
-                              : Colors.grey.shade300,
-                        ),
-                      ),
-                      child: const Text('Login'),
-                    ),
+                    isLoading
+                        ? SpinKitCircle(
+                            color: Colors.blue,
+                          )
+                        : ElevatedButton(
+                            onPressed:
+                                _formKey.currentState?.validate() ?? false
+                                    ? () async {
+                                        setState(() {
+                                          isLoading = true;
+                                        });
+                                        try {
+                                          await authInstance
+                                              .signInWithEmailAndPassword(
+                                                  email: emailController.text
+                                                      .toLowerCase()
+                                                      .trim(),
+                                                  password: passwordController
+                                                      .text
+                                                      .trim());
+                                          Navigator.of(context).pushReplacement(
+                                              MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      SplashScreen()));
+
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            const SnackBar(
+                                              content: Text('Logged In!'),
+                                            ),
+                                          );
+                                          setState(() {
+                                            isLoading = false;
+                                          });
+                                        } on FirebaseAuthException catch (e) {
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(SnackBar(
+                                                  content: Text(e.message!)));
+                                        } catch (e) {
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(SnackBar(
+                                                  content: Text(e as String)));
+                                        } finally {
+                                          setState(() {
+                                            isLoading = false;
+                                          });
+                                        }
+
+                                        emailController.clear();
+                                        passwordController.clear();
+                                      }
+                                    : null,
+                            style: const ButtonStyle().copyWith(
+                              backgroundColor: MaterialStateProperty.all(
+                                _formKey.currentState?.validate() ?? false
+                                    ? null
+                                    : Colors.grey.shade300,
+                              ),
+                            ),
+                            child: const Text('Login'),
+                          ),
                     const SizedBox(
                       height: 30,
                     ),

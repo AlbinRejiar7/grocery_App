@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:grocery_app/controller/dark_theme_provider.dart';
 import 'package:provider/provider.dart';
 
-import '../controller/dark_theme_controller.dart';
-import '../widget/category_screen_widgets/categories_widget.dart';
+import '../../widget/category_screen_widgets/categories_widget.dart';
 
 class CategoriesScreen extends StatelessWidget {
   const CategoriesScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    var themeController = Provider.of<ThemeController>(context);
+    var themeController = Provider.of<DarkThemeProvider>(context);
     final color = themeController.getDarkTheme ? Colors.white : Colors.black;
+
     List<Map<String, dynamic>> categoriesDetails = [
       {
         "imagepath": "assets/images/categories/fruits.png",
@@ -57,7 +58,6 @@ class CategoriesScreen extends StatelessWidget {
           return Padding(
             padding: const EdgeInsets.all(13),
             child: CategoriesWidget(
-              onTap: () {},
               imagePath: categoriesDetails[index]["imagepath"],
               catName: categoriesDetails[index]["catName"],
             ),
