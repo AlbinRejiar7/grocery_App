@@ -96,13 +96,14 @@ class _RegisterPageState extends State<RegisterPage> {
                 },
                 child: Column(
                   children: [
-                    pickedImage == null
+                    pickedImage != null
                         ? CircleAvatar(
+                            backgroundImage: FileImage(pickedImage!),
                             radius: 70,
                           )
                         : CircleAvatar(
-                            backgroundImage: FileImage(pickedImage!),
                             radius: 70,
+                            backgroundColor: Colors.deepOrangeAccent,
                           ),
                     Icon(Icons.add_a_photo)
                   ],
@@ -280,8 +281,10 @@ class _RegisterPageState extends State<RegisterPage> {
                                         .ref()
                                         .child("profileimage")
                                         .child("$uid.jpg");
-                                    await ref.putFile(pickedImage!);
-                                    imageUrl = await ref.getDownloadURL();
+                                    if (pickedImage != null) {
+                                      await ref.putFile(pickedImage!);
+                                      imageUrl = await ref.getDownloadURL();
+                                    }
 
                                     await FirebaseFirestore.instance
                                         .collection("users")
