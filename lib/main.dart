@@ -8,6 +8,7 @@ import 'package:grocery_app/controller/product_controller.dart';
 import 'package:grocery_app/controller/user_profile_controller.dart';
 import 'package:grocery_app/firebase_options.dart';
 import 'package:grocery_app/view/category_screen/category_detail_screen.dart';
+import 'package:grocery_app/view/home_screen.dart';
 import 'package:grocery_app/view/inner_screens.dart/product_detail_screen.dart';
 import 'package:grocery_app/view/splash_screen.dart';
 import 'package:provider/provider.dart';
@@ -63,6 +64,7 @@ class _MyAppState extends State<MyApp> {
         routes: {
           "productdetails": (context) => const ProductdetailScreen(),
           "categorydetailsscreen": (context) => const CategorydetailScreen(),
+          "homescreen": (context) => const HomeScreen(),
         },
       );
     });

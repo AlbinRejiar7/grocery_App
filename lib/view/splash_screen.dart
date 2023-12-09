@@ -18,15 +18,13 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(seconds: 4), () async {
+    Future.delayed(const Duration(seconds: 1), () async {
       var provider = Provider.of<ProductController>(context, listen: false);
       var cartProvider = Provider.of<CartController>(context, listen: false);
-      cartProvider.fetchCart();
+      await cartProvider.fetchCart();
       await provider.fetchProduct();
-
-      Navigator.pushReplacement(context,
-          MaterialPageRoute(builder: (ctx) => const BottomNavScreen()));
-    });
+    }).then((value) => Navigator.pushReplacement(
+        context, MaterialPageRoute(builder: (ctx) => const BottomNavScreen())));
   }
 
   @override

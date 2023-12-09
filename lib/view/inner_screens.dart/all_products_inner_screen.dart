@@ -20,6 +20,16 @@ class _AllProductsInnerScreenState extends State<AllProductsInnerScreen> {
     super.dispose();
   }
 
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(Durations.extralong1, () async {
+      final productProviders =
+          Provider.of<ProductController>(context, listen: false);
+      await productProviders.fetchProduct();
+    });
+  }
+
   TextEditingController searchController = TextEditingController();
   var query = "";
   @override

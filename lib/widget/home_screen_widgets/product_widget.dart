@@ -88,7 +88,8 @@ class OurProductsWidget extends StatelessWidget {
                       visible: productModel.isOnSale,
                       child: Text(
                         "₹${productModel.price.toString()}",
-                        style: const TextStyle(
+                        style: TextStyle(
+                            color: color,
                             decoration: TextDecoration.lineThrough,
                             fontSize: 15,
                             fontWeight: FontWeight.w900),

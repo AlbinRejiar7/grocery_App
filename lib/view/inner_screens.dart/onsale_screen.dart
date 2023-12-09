@@ -6,8 +6,22 @@ import 'package:grocery_app/widget/home_screen_widgets/onsale_container.dart';
 import 'package:iconly/iconly.dart';
 import 'package:provider/provider.dart';
 
-class OnSaleinnerScreen extends StatelessWidget {
+class OnSaleinnerScreen extends StatefulWidget {
   const OnSaleinnerScreen({super.key});
+
+  @override
+  State<OnSaleinnerScreen> createState() => _OnSaleinnerScreenState();
+}
+
+class _OnSaleinnerScreenState extends State<OnSaleinnerScreen> {
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(Durations.medium1, () async {
+      var provider = Provider.of<ProductController>(context, listen: false);
+      await provider.fetchProduct();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

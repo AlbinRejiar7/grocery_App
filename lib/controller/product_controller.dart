@@ -1,11 +1,9 @@
-// ignore_for_file: avoid_function_literals_in_foreach_calls
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:grocery_app/Model/products_model.dart';
 
 class ProductController with ChangeNotifier {
-  static final List<ProductModel> _productsList = [];
+  List<ProductModel> _productsList = [];
   List<ProductModel> get getProducts => _productsList;
 
   List<ProductModel> get getOnsaleProducts {
@@ -17,8 +15,8 @@ class ProductController with ChangeNotifier {
         .collection("products")
         .get()
         .then((productSnapShot) {
-      _productsList.clear();
-      productSnapShot.docs.forEach((document) {
+      _productsList = [];
+      for (var document in productSnapShot.docs) {
         _productsList.insert(
             0,
             ProductModel(
@@ -31,7 +29,7 @@ class ProductController with ChangeNotifier {
               isOnSale: document.get("isOnSale"),
               isPiece: document.get("isPiece"),
             ));
-      });
+      }
     });
   }
 

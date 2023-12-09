@@ -32,7 +32,9 @@ class _CartScreenState extends State<CartScreen> {
 
   void _handlePaymentSuccess(PaymentSuccessResponse response) async {
     // Do something when payment succeeds
-
+    setState(() {
+      isPaymentSuccessfull = true;
+    });
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text("PAYMENT SUCCESSFULL YOUR ORDER HAS BEEN PLACED")));
   }
@@ -41,6 +43,9 @@ class _CartScreenState extends State<CartScreen> {
     // Do something when payment fails
     ScaffoldMessenger.of(context)
         .showSnackBar(const SnackBar(content: Text("PAYMENT FAILED")));
+    setState(() {
+      isPaymentSuccessfull = false;
+    });
   }
 
   void _handleExternalWallet(ExternalWalletResponse response) {
@@ -116,17 +121,12 @@ class _CartScreenState extends State<CartScreen> {
                                   }
                                 };
                                 _razorpay.open(options);
-                                setState(() {
-                                  isPaymentSuccessfull = true;
-                                });
                               } catch (e) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(content: Text(e.toString())));
                               } finally {
-                                if (isPaymentSuccessfull) {
-                                  await orderController.saveOrderstoDb(
-                                      context, total);
-                                }
+                                await orderController.saveOrderstoDb(
+                                    context, total);
                                 setState(() {
                                   isPaymentSuccessfull = false;
                                 });
