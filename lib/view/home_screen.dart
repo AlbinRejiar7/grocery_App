@@ -1,8 +1,9 @@
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:grocery_app/Model/products_model.dart';
 import 'package:grocery_app/controller/dark_theme_provider.dart';
-import 'package:grocery_app/controller/product_controller.dart';
 import 'package:grocery_app/view/inner_screens.dart/all_products_inner_screen.dart';
 import 'package:grocery_app/widget/home_screen_widgets/onsale_container.dart';
 import 'package:grocery_app/widget/home_screen_widgets/product_widget.dart';
@@ -20,11 +21,13 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  List<ProductModel> allproducts = [];
+
+  List<ProductModel> onSaleproducts = [];
   @override
   void initState() {
     super.initState();
-    var provider = Provider.of<ProductController>(context, listen: false);
-    provider.fetchProduct();
+    onSaleproducts = allproducts.where((element) => element.isOnSale).toList();
   }
 
   int currentIndex = 0;
@@ -33,10 +36,6 @@ class _HomeScreenState extends State<HomeScreen> {
     var size = MediaQuery.of(context).size;
     final themeController = Provider.of<DarkThemeProvider>(context);
     Color color = themeController.getDarkTheme ? Colors.white : Colors.black;
-    final List<ProductModel> allproducts =
-        Provider.of<ProductController>(context).getProducts;
-    final List<ProductModel> onSaleproducts =
-        Provider.of<ProductController>(context).getOnsaleProducts;
 
     List<String> carouselImages = [
       "https://images.unsplash.com/photo-1550989460-0adf9ea622e2?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
@@ -143,76 +142,107 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-            // DotsIndicator(
-            //   dotsCount: carouselImages.length,
-            //   position: currentIndex,
-            //   decorator: DotsDecorator(
-            //     color: Colors.brown,
-            //     activeColor: Colors.blue[900],
-            //     size: const Size.square(10),
-            //     activeSize: const Size(25, 11),
-            //     activeShape: RoundedRectangleBorder(
-            //       borderRadius: BorderRadius.circular(5.0),
-            //     ),
-            //   ),
-            // ),
-            onSaleproducts.isEmpty
-                ? const Text(
-                    "Currently Theres no offer",
-                    style: TextStyle(
-                        color: Colors.red,
-                        fontSize: 24,
-                        fontWeight: FontWeight.w900),
-                  )
-                : Row(
+            Row(
+              children: [
+                const RotatedBox(
+                  quarterTurns: -1,
+                  child: Row(
                     children: [
-                      const RotatedBox(
-                        quarterTurns: -1,
-                        child: Row(
-                          children: [
-                            Text(
-                              "ON SALE",
-                              style: TextStyle(
-                                  color: Colors.red,
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.w900),
-                            ),
-                            SizedBox(
-                              width: 10,
-                            ),
-                            Icon(
-                              IconlyBold.discount,
-                              color: Colors.red,
-                              size: 35,
-                            )
-                          ],
-                        ),
+                      Text(
+                        "ON SALE",
+                        style: TextStyle(
+                            color: Colors.red,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w900),
                       ),
-                      Flexible(
-                        child: SizedBox(
-                          height: size.width * 0.50,
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: ListView.separated(
-                              separatorBuilder: (context, builder) =>
-                                  const SizedBox(
-                                width: 15,
-                              ),
-                              scrollDirection: Axis.horizontal,
-                              itemCount: onSaleproducts.length > 4
-                                  ? 4
-                                  : onSaleproducts.length,
-                              itemBuilder: (BuildContext context, int index) {
-                                return ChangeNotifierProvider.value(
-                                    value: onSaleproducts[index],
-                                    child: const OnSaleWidget());
-                              },
-                            ),
-                          ),
-                        ),
+                      SizedBox(
+                        width: 10,
                       ),
+                      Icon(
+                        IconlyBold.discount,
+                        color: Colors.red,
+                        size: 35,
+                      )
                     ],
                   ),
+                ),
+                Flexible(
+                  child: SizedBox(
+                    height: size.width * 0.50,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: StreamBuilder(
+                          stream: FirebaseFirestore.instance
+                              .collection('products')
+                              .snapshots(),
+                          builder: (context, snapshot) {
+                            try {
+                              onSaleproducts = snapshot.data!.docs
+                                  .map((DocumentSnapshot document) {
+                                    Map<String, dynamic> data =
+                                        document.data() as Map<String, dynamic>;
+                                    return ProductModel(
+                                        id: data["id"],
+                                        title: data["title"],
+                                        imageUrl: data["imageUrl"],
+                                        productCategoryName:
+                                            data["categoryName"],
+                                        price: double.parse(data["price"]),
+                                        salePrice: data["salePrice"],
+                                        isOnSale: data["isOnSale"],
+                                        isPiece: data["isPiece"]);
+                                  })
+                                  .toList()
+                                  .where((element) => element.isOnSale)
+                                  .toList();
+                            } catch (e) {
+                              return const SpinKitCircle(
+                                color: Colors.amberAccent,
+                              );
+                            }
+
+                            if (snapshot.connectionState ==
+                                    ConnectionState.active &&
+                                onSaleproducts.isNotEmpty) {
+                              return ListView.separated(
+                                separatorBuilder: (context, builder) =>
+                                    const SizedBox(
+                                  width: 15,
+                                ),
+                                scrollDirection: Axis.horizontal,
+                                itemCount: onSaleproducts.length > 4
+                                    ? 4
+                                    : onSaleproducts.length,
+                                itemBuilder: (BuildContext context, int index) {
+                                  return ChangeNotifierProvider.value(
+                                      value: onSaleproducts[index],
+                                      child: const OnSaleWidget());
+                                },
+                              );
+                            } else if (!snapshot.hasData) {
+                              return const SpinKitCircle(
+                                color: Colors.cyan,
+                              );
+                            } else if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const SpinKitCubeGrid(
+                                color: Colors.red,
+                              );
+                            } else if (onSaleproducts.isEmpty) {
+                              return const SpinKitCircle(
+                                color: Colors.cyan,
+                              );
+                            } else {
+                              return const SpinKitCircle(
+                                color: Colors.cyan,
+                              );
+                            }
+                          }),
+                    ),
+                  ),
+                ),
+              ],
+            ),
             InkWell(
               onTap: () {
                 Navigator.push(
@@ -240,30 +270,61 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-            allproducts.isEmpty
-                ? const Text(
-                    "STORE IS EMPTY",
-                    style: TextStyle(
-                        color: Colors.red,
-                        fontSize: 24,
-                        fontWeight: FontWeight.w900),
-                  )
-                : GridView.builder(
-                    physics: const NeverScrollableScrollPhysics(),
-                    shrinkWrap: true,
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                      crossAxisCount: 2,
-                    ),
-                    itemCount: allproducts.length > 4 ? 4 : allproducts.length,
-                    itemBuilder: (BuildContext context, int index) {
-                      return ChangeNotifierProvider.value(
-                          value: allproducts[index],
-                          child: const OurProductsWidget());
-                    },
-                  )
+            StreamBuilder(
+                stream: FirebaseFirestore.instance
+                    .collection('products')
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.active) {
+                    allproducts =
+                        snapshot.data!.docs.map((DocumentSnapshot document) {
+                      Map<String, dynamic> data =
+                          document.data() as Map<String, dynamic>;
+                      return ProductModel(
+                          id: data["id"],
+                          title: data["title"],
+                          imageUrl: data["imageUrl"],
+                          productCategoryName: data["categoryName"],
+                          price: double.parse(data["price"]),
+                          salePrice: data["salePrice"],
+                          isOnSale: data["isOnSale"],
+                          isPiece: data["isPiece"]);
+                    }).toList();
+
+                    return GridView.builder(
+                      physics: const NeverScrollableScrollPhysics(),
+                      shrinkWrap: true,
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
+                        crossAxisCount: 2,
+                      ),
+                      itemCount:
+                          allproducts.length > 4 ? 4 : allproducts.length,
+                      itemBuilder: (BuildContext context, int index) {
+                        return ChangeNotifierProvider.value(
+                            value: allproducts[index],
+                            child: const OurProductsWidget());
+                      },
+                    );
+                  } else if (snapshot.connectionState ==
+                      ConnectionState.waiting) {
+                    return const SpinKitCircle(
+                      color: Colors.red,
+                    );
+                  } else if (!snapshot.hasData) {
+                    return const Text(
+                      "STORE IS EMPTY",
+                      style: TextStyle(
+                          color: Colors.red,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w900),
+                    );
+                  } else {
+                    return const Text("Something Wrong");
+                  }
+                })
           ],
         ),
       )),
