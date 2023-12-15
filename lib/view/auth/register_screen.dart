@@ -155,7 +155,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           ? 'Please, Enter Password'
                           : AppConstants.passwordRegex.hasMatch(value)
                               ? null
-                              : 'Invalid Password';
+                              : 'Password must Contain symbol,capital letter,small letter\nnumber and must greater than 7';
                     },
                     controller: passwordController,
                     obscureText: isObscure,
@@ -210,7 +210,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                       confirmPasswordController.text
                                   ? null
                                   : 'Password not matched!'
-                              : 'Invalid Password!';
+                              : 'Password not matched!';
                     },
                     controller: confirmPasswordController,
                     obscureText: isConfirmPasswordObscure,

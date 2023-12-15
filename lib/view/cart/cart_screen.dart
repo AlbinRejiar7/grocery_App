@@ -80,6 +80,13 @@ class _CartScreenState extends State<CartScreen> {
         ? const EmptyScreen()
         : Scaffold(
             appBar: AppBar(
+              leading: IconButton(
+                  onPressed: () {},
+                  icon: Icon(
+                    Icons.arrow_back,
+                    color: color,
+                  )),
+              automaticallyImplyLeading: false,
               backgroundColor: Theme.of(context).scaffoldBackgroundColor,
               title: Text(
                 "Cart(${cartProvider.getCartItems.length})",
@@ -116,17 +123,19 @@ class _CartScreenState extends State<CartScreen> {
                                   'name': 'Fresh Veggies',
                                   'description': 'For your good Health',
                                   'prefill': {
-                                    'contact': '8111827670',
-                                    'email': 'albinpulyath@gmail.com'
+                                    'contact': '4535345345',
+                                    'email': 'abcd@gmail.com'
                                   }
                                 };
                                 _razorpay.open(options);
+                                if (isPaymentSuccessfull) {
+                                  await orderController.saveOrderstoDb(
+                                      context, total);
+                                }
                               } catch (e) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(content: Text(e.toString())));
                               } finally {
-                                await orderController.saveOrderstoDb(
-                                    context, total);
                                 setState(() {
                                   isPaymentSuccessfull = false;
                                 });
